@@ -1,0 +1,32 @@
+\section{Data Analysis and Pre-processing}
+\label{data-analysis}
+
+The dataset consists of approximately $6 \times 10^9$ reviews in JSON format, where each entry represents a user's review of a particular business. The schema of each entry is straightforward:
+
+\begin{center}
+    \resizebox{\textwidth}{!}{
+    \begin{tabular}{|c|c|c|}
+        \hline
+        Attribute Name & Attribute Type & Attribute Meaning \\
+        \hline
+        business\_id & string & \makecell{This field represents the ID of the business being reviewed. \\ For example, a business\_id value could be "KU\_O5udG6zpxOg-VcAEodg".} \\
+        \hline
+        cool & long & \makecell{This field represents the number of "cool" reactions \\ given by other users to the current review.} \\
+        \hline
+        \dots & \dots & \dots \\
+        \hline
+        date & string & Date when the review was posted. \\
+        \hline
+        funny & long & Same as "cool". \\
+        \hline
+        text & string & \makecell{The actual text of the review. \textbf{This is the interesting field}.} \\
+        \hline
+    \end{tabular}
+    }
+\end{center}
+
+As indicated in the table above, our focus is on analyzing the "text" attribute for all the reviews. This attribute contains the user's review of a business. As a first step I had to decide the type of items to consider: k-grams or words. Initially, I considered k-grams. To determine the value of $k$, I made a simple observation: the average length of a review in the dataset is 567 characters, and I assumed a character set cardinality of 27. My criteria for choosing $k$ was to have a low probability of finding each k-gram in each review. Therefore, by using $k = 4$, it is possible to create $27^4 >> 567$ k-grams. Although I could have used 4-grams, the median length of English words is 4, so I decided to directly use words as items to obtain more understandable results. Moreover, using k-grams would have increased the total number of items in a single review, adding complexity to the algorithm without significant benefits.
+
+To tokenize the reviews, I initially considered using regular expressions but later opted for the NLTK package; it provides a pre-trained tokenizer for English text as well as a set of stopwords for the same language. The tokenization process is straightforward: I decided to convert each word to lowercase, remove numbers, and eliminate stopwords. Treating "As" and "as" as separate items would be redundant since they represent the same word. Including stopwords as items could lead to conceptually incorrect results. For example, it is true that "the" frequently appears with other words, but this is simply a characteristic of the language structure and is not significant in this context.
+
+To proceed with the implementation, I extracted a sample of data from the entire dataset, selected only the "text" attribute, and applied the tokenization algorithm defined above to each review in the sample. I chose a small sample of approximately $7 \times 10^5$ reviews to ensure faster computation time. Since the project will not run in a distributed environment, I won't be able to leverage the distributed capabilities of Apache Spark.

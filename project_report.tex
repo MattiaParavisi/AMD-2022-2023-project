@@ -1,0 +1,58 @@
+\documentclass[11pt]{article}
+
+\usepackage{sectsty}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{makecell}
+\usepackage{listings}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    }
+\lstset{
+    basicstyle=\ttfamily,
+    columns=fullflexible,
+    frame=single,
+    breaklines=true,
+    postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+    }
+
+
+\topmargin=-0.45in
+\evensidemargin=0in
+\oddsidemargin=0in
+\textwidth=6.5in
+\textheight=9.0in
+\headsep=0.25in
+
+\title{Algorithms for massive datasets project report \\ \vspace{10px} \large Market basket analysis}
+
+\author{ Mattia Paravisi - 08395A }
+\date{\today}
+
+\begin{document}
+\maketitle
+\begin{center}
+    \vfill
+            
+    I/We declare that this material, which I/We now submit for assessment, is entirely my/our own work and has not been taken from the work of others, save and to the extent that such work has been cited and acknowledged within the text of my/our work. I/We understand that plagiarism, collusion, and copying are grave and serious offences in the university and accept the penalties that would be imposed should I engage in plagiarism, collusion or copying. This assignment, or any part of it, has not been previously submitted by me/us or any other person for assessment on this or any other course of study
+         
+    \vspace{0.8cm}
+\end{center}
+\pagebreak
+
+\pagebreak
+
+%--Paper--
+
+
+\input{project_report_src/project_report_chapters/introduction.tex}
+\input{project_report_src/project_report_chapters/data_analysis.tex}
+\input{project_report_src/project_report_chapters/apriori_algorithm.tex}
+\input{project_report_src/project_report_chapters/experiments.tex}
+
+%--/Paper--
+
+\end{document}

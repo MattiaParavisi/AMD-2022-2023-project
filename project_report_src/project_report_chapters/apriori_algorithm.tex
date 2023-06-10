@@ -1,0 +1,130 @@
+\section{Apriori implementation}
+
+I decided to implement the Apriori algorithm for the reasons I mentioned in chapter \ref{introduction}. 
+\paragraph{Support functions}
+I used only two support functions: the first one takes an item from the whole item set and gives as result an integer representation for that item, this function is useful to enhance main memory usage. Indeed each string, in Python, has a memory usage in bytes which \textbf{starts} from 40 bytes:
+
+\begin{lstlisting}[language=Python]
+    sys.getsizeof('')
+    >> 40
+\end{lstlisting}
+
+for this reason encoding each string as an integer is convenient considered the fact that each integer occupies 32 bytes. The methods I wrote with this purpose of encoding/decoding are:
+
+\begin{lstlisting}[language=Python]
+    item_to_index = {}
+    index_to_item = []
+
+    def item_to_index_funct(item):
+      if item not in item_to_index:
+        item_to_index[item] = len(item_to_index.keys())
+        index_to_item.append(item)
+      return item_to_index[item]
+
+    def index_to_item_funct(val):
+      res = []
+      if type(val) == int:
+            return index_to_item[val]
+      for sub_el in val:
+            res.append(index_to_item[sub_el])
+      return tuple(res)
+\end{lstlisting}
+
+the first method given an item checks if it is inside the dictionary item\_to\_index, if not it just creates a new entry which has as value the next integer with respect to the encoding of the previous item and as key the current item. After each insertion in the dictionary the method appends to an array the item, this is done to guarantee an inverse retrieval in time $O(1)$. The method index\_to\_item\_funct just access to the array using the given index.
+
+For example, lets suppose that currently we have $n$ elements in the dictionary $x_0, \dots, x_n$. The dictionary's key-value couples are:
+$$
+(x_0,0),(x_1,1),\dots,(x_n,n)
+$$
+and the corresponding array is:
+$$
+[x_0,x_1,\dots,x_n]
+$$
+when the element $x_{n+1}$ arrives, in the dictionary will be created the tuple $(x_{n+1}, n+1)$ and $x_{n+1}$ will be appended to the array:
+$$
+(x_0,0),(x_1,1),\dots,(x_n,n),(x_{n+1},n+1)
+$$
+$$
+[x_0,x_1,\dots,x_n,x_{n+1}]
+$$
+in this way, given a generic index $k$ to the second function the retrieval of $x_k$ is efficient.
+
+\paragraph{Data pre-processing} Assumed that the sample mentioned in chapter \ref{data-analysis} is given, using classical Python code, I have applied the token to index method to each of the basket in the sample:
+\begin{lstlisting}[language=Python]
+  collected_data = [[item_to_index_funct(token) for token in review] for review in collected_data]
+\end{lstlisting}
+for each review in the sample I just apply the function mentioned above to all the tokens. The result of this operation is a list of lists of integers:
+$$
+[[0,11,3,\dots],[4,12,0,\dots],\dots]
+$$
+in each sub-list a single integer is the encoding for a specific word, each sub-list is the encoding for a single review.
+
+\paragraph{Apriori} I decided to write just one function and exploit Spark's operations devoted to distributed computation to implement Apriori algorithm. It is mainly composed by two pieces: the first one is used to find frequent singletons, the second creates and filters new candidates, the latter will be executed until we have no more candidates. Starting from the first block of code:
+\begin{lstlisting}[language=Python]
+frequent_tuples =     data \
+  .flatMap(lambda token: token) \
+  .map(lambda token : (token, 1)) \
+  .reduceByKey(lambda token_a, token_b : token_a + token_b) \
+  .filter(lambda token : token[1] > support)
+frequent_elems = frequent_tuples.map(lambda token: token[0])
+\end{lstlisting}
+the operations are:
+\begin{itemize}
+  \item The \textit{flatMap} is used to get a list of single tokens starting from the complete list of reviews. For example, if I have data which is 
+  $$
+  [[1,2],[2,3]]
+  $$
+  after the \textit{flatMap} I will have a single list
+  $$
+  [1,2,2,3]
+  $$
+  it is easy to apply a count pattern on those elements to get the frequency of each item.
+  \item To apply the count pattern I had to \textit{map} all the elements in
+  $$
+  (key,1)
+  $$
+  the idea is to \textit{reduceByKey} summing by the value. This operation allows to obtain the absolute frequencies for the $key$. In the previous example, after the mapping, the list will be:
+  $$
+  [(1,1),(2,1),(2,1),(3,1)]
+  $$
+  \item \textit{reduceByKey} allows to sum the values and get the absolute frequece of each item
+  $$
+  [(1,1),(2,2),(3,1)]
+  $$
+  \item \textit{filter} just removes the items which frequence is not above the threshold we passed to the algorithm.
+\end{itemize}
+
+The second piece of my implementation does exactly the same thing but it is splitted in two sub cases depending on the fact that we are creating k-tuples with $k=2$ or $k>2$; this is due to how Python itertools module manage combinations with $k=1$ (when $k=2$ I am interested in each sub-tuple with $k=1$ in the couple). Here I will just describe one of the two sub parts. Lets consider for example the first one:
+\begin{lstlisting}
+if k == 2:
+
+  data = spark.sparkContext.parallelize(data \
+    .map(lambda indexed_element: [el[0] for el in combinations(indexed_element, k-1) if el[0] in collected_freq_elems.value])\
+    .filter(lambda x: len(x) > k).collect())
+
+  frequent_k_tuples = data \
+    .flatMap(lambda indexed_element: [el for el in combinations(indexed_element, k) if set(el).issubset(set(collected_freq_elems.value))]) \
+    .map(lambda token : (token, 1)) \
+    .reduceByKey(lambda token_a, token_b : token_a + token_b) \
+    .filter(lambda token : token[1] > support)
+\end{lstlisting}
+
+In the first assignment, into the parallelize method:
+\begin{itemize}
+  \item \textit{data} is the whole collected dataset.
+  \item \textit{map} takes each review in data, for each review creates the combinations with cardinality 1,($k-1$ in this particular case is 1) and keeps the element only if it was frequent.
+  \item \textit{filter} takes only the new reviews which have a length greater than 1 because I will then create combinations of two elements, for this reason I need that each review has at least two elements. 
+\end{itemize}
+
+The idea of this reassignment of \textbf{data} is that i want to keep at each iterations only the tokens that were frequent at the step before: it useless to compute each time a new filter on the whole review; indeed if in a couple $(x,y)$ i have that for instance $x$ is not frequent, i can filter out from the review that element because each couples with $x$ will be discarded anyway.
+
+In the second assignment:
+\begin{itemize}
+  \item \textit{data} is the filtered version of the initial dataset.
+  \item \textit{flatMap} allows me to create the combinations with cardinality 2.
+  \item \textit{map} creates the couples for the count pattern.
+  \item \textit{reduceByKey} allows to count the frequency of each couple.
+  \item \textit{filter} allows to keep only the elements which frequency is greater than the support.
+\end{itemize}
+
+I continue to apply this steps until the set of frequent items is empty.

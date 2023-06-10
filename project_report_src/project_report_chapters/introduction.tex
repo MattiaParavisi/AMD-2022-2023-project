@@ -1,0 +1,10 @@
+\section{Introduction}
+\label{introduction}
+
+This report includes the mental process I have followed during the development of the project, the code explanation, and some personal considerations. I chose to focus on market basket analysis for this project. The goal of this track is to implement a system from scratch that can find frequent itemsets, also known as market-basket analysis. In this context, the text field is considered as baskets and words, or other shingles, are treated as items. I have implemented the \textbf{Apriori algorithm} from scratch.
+
+I decided to write the code for the Apriori algorithm because it serves as the baseline for some of the other algorithms covered in the lectures, such as SON and PCY. I believe that a well-implemented Apriori algorithm will pave the way for good implementations of the other two algorithms as well.
+
+In market basket analysis the objective is to discover frequent itemsets that appear in the processed baskets in order to gain knowledge about the studied process. By using this set, it is possible to create association rules that are of interest. For this particular project, I utilized the "Yelp Dataset" which can be found \href{https://www.kaggle.com/datasets/yelp-dataset/yelp-dataset}{here}. Specifically, I focused on the review subset of the entire dataset, considering the "text" field and treating each JSON entry as a basket, with each word in the entry as an item.
+
+The most recent access I made to the dataset was on June 7, 2023.

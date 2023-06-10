@@ -8,7 +8,7 @@ This repository contains all the material related to the project i made for the 
 </ol>
 
 [![CC BY-SA 4.0][cc-by-sa-shield]][cc-by-sa]
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://github.com/MattiaParavisi/AMD-2022-2023-project/blob/master/market_baskt_analysis.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://github.com/MattiaParavisi/AMD-2022-2023-project/blob/master/AMD_project_08395A.ipynb)
 
 This work is licensed under a
 [Creative Commons Attribution-ShareAlike 4.0 International License][cc-by-sa].
